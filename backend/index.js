@@ -1,49 +1,56 @@
-const http = require("http");
+require("dotenv").config();
+
+const Book = require("./models/book");
+
 const express = require("express");
 const app = express();
+const requestLogger = require("./logger");
+const mongoose = require("mongoose");
+
+const uri = process.env.MONGODB_URI;
+
+mongoose
+  .connect(uri)
+  .then((result) => {
+    console.log("connected to MongoDB");
+  })
+  .catch((error) => {
+    console.log(error.message);
+  });
 
 app.use(express.json());
-
-const books = [
-  { id: 1, author: "Test", title: "Test", year: 2001 },
-  { id: 2, author: "Test", title: "Test", year: 2001 },
-];
-
-const generateId = () => {
-  const maxId = books.length > 0 ? Math.max(...books.map((b) => b.id)) : 0;
-  return maxId + 1;
-};
+app.use(requestLogger);
 
 app.get("/api/books", (request, response) => {
-  response.json(books);
+  Book.find({}).then((books) => response.json(books));
 });
 
 app.get("/api/books/:id", (request, response) => {
-  const id = +request.params.id;
-  const book = books.find((book) => book.id === id);
-
-  response.json(book);
+  Book.findById(request.params.id).then((book) => response.json(book));
 });
 
 app.delete("/api/books/:id", (request, response) => {
   const id = Number(request.params.id);
-  books = books.filter((book) => book.id !== id);
-  response.status(204).end();
+  Book.findByIdAndDelete(request.params.id).then(() => {
+    response.status(204).end();
+  });
 });
 
-app.post("api/books", (request, response) => {
+app.post("/api/books", (request, response) => {
   const { author, title, year } = request.body;
-  if (!body.author) {
+
+  if (!author) {
     return response.status(400).json({ error: "author is missing" });
   }
-  const newBook = {
-    id: generateId(),
+  const book = new Book({
     author,
     title,
     year,
-  };
-  books = books.concat(newBook);
-  reponse.json(books);
+  });
+
+  book.save().then((result) => {
+    response.status(204).end();
+  });
 });
 
 const PORT = 3001;
