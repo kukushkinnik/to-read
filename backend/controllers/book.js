@@ -22,6 +22,7 @@ bookRoutes.post("/", async (request, response) => {
     title,
     author,
     year,
+    status: "Not Read",
   });
 
   const savedBook = await book.save();
@@ -39,6 +40,19 @@ bookRoutes.delete("/:id", async (request, response) => {
     await bookToDelete.remove();
     return response.status(204).end();
   }
+});
+
+bookRoutes.put("/:id", async (request, response) => {
+  const { author, title, year } = reques.body;
+  const book = {
+    author,
+    title,
+    year,
+  };
+  const bookToUpdate = await Book.findByIdAndUpdate(request.params.id, book, {
+    new: true,
+  });
+  response.json(bookToUpdate);
 });
 
 module.exports = bookRoutes;
