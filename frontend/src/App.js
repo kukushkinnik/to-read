@@ -12,6 +12,7 @@ function App() {
   const [reading, setReading] = useState(0);
   const [completed, setCompleted] = useState(0);
   const [showStats, setShowStats] = useState(false);
+  const [status, setStatus] = useState("Not Read");
   const [showFormAddBook, setShowFormAddBook] = useState(false);
 
   useEffect(() => {
@@ -29,6 +30,7 @@ function App() {
       author: author,
       title: title,
       year: year,
+      status: status,
     };
 
     bookService
@@ -42,6 +44,14 @@ function App() {
       .catch((error) => {
         console.log(error.response.data);
       });
+  }
+
+  function updateBook(id, status) {
+    const book = books.find((book) => book.id === id);
+    const updatedBook = { ...book, status: status };
+    bookService.update(id, updatedBook).then((returnedBook) => {
+      setBooks(books.map((book) => (book.id !== book ? book : returnedBook)));
+    });
   }
 
   function showStatistics() {
@@ -75,15 +85,19 @@ function App() {
     setYear(e.target.value);
   }
 
-  function option(e) {
-    if (e.target.value === "notRead") {
+  function option(id, event) {
+    if (event.target.value === "Not Read") {
       setNotRead(notRead + 1);
     }
-    if (e.target.value === "reading") {
+    if (event.target.value === "Reading") {
       setReading(reading + 1);
+      setStatus(event.target.value);
+      updateBook(id, event.target.value);
     }
-    if (e.target.value === "complete") {
+    if (event.target.value === "Complete") {
       setCompleted(completed + 1);
+      setNotRead(notRead - 1);
+      updateBook(id, event.target.value);
     }
   }
 
@@ -103,15 +117,6 @@ function App() {
         </div>
       )}
 
-      <select onChange={option}>
-        <option value="none" selected disabled hidden>
-          Select an Option
-        </option>
-        <option value="notRead">Not Read</option>
-        <option value="reading">Reading</option>
-        <option value="complete">Complete</option>
-      </select>
-
       {showFormAddBook && (
         <BookForm
           updAuthor={updateAuthor}
@@ -125,7 +130,7 @@ function App() {
       )}
       <button onClick={showStatistics}>Statistics</button>
 
-      <BooksList books={books} deleteBook={deleteBook} />
+      <BooksList books={books} deleteBook={deleteBook} option={option} />
     </div>
   );
 }
